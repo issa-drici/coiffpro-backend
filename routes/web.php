@@ -6,4 +6,13 @@ Route::get('/', function () {
     return ['Laravel' => app()->version()];
 });
 
-require __DIR__.'/auth.php';
+Route::get('/blog/{slug}-{id}', function (string $slug, string $id) {
+    $test = 'test';
+    return [
+        'slug' => $slug,
+        'id' => $id,
+        'test' => $test
+    ];
+});
+
+require __DIR__ . '/auth.php';
