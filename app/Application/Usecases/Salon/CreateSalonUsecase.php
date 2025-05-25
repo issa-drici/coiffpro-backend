@@ -19,23 +19,23 @@ class CreateSalonUsecase
 
     public function execute(array $data): Salon
     {
-        // 1. Vérifier l’auth
+        // 1. Vérifier l'auth
         $user = Auth::user();
         if (!$user) {
             throw new UnauthorizedException("User not authenticated.");
         }
 
-        // // 2. Vérifier le rôle
-        // if (!in_array($user->role, ['admin', 'salon_owner', 'franchise_manager'])) {
-        //     throw new UnauthorizedException("User not allowed to create restaurant.");
-        // }
+        // 2. Vérifier que le nom du salon est fourni
+        if (!isset($data['name']) || empty($data['name'])) {
+            throw new \InvalidArgumentException("Le nom du salon est obligatoire.");
+        }
 
-
-        // 3. Créer l’entité
+        // 3. Créer l'entité
         $salon = new Salon(
             id: Str::uuid()->toString(),
-            ownerId: $user->id,
-            name: $user->name,
+            ownerId: $data['owner_id'] ?? $user->id,
+            name: $data['name'],
+            nameSlug: $data['name_slug'] ?? Str::slug($data['name'])
         );
 
         // 4. Persister

@@ -10,6 +10,12 @@ use App\Infrastructure\Repositories\EloquentSalonRepository;
 use App\Infrastructure\Repositories\EloquentFileRepository;
 use App\Domain\Repositories\UserRepositoryInterface;
 use App\Infrastructure\Repositories\EloquentUserRepository;
+use App\Domain\Repositories\Interfaces\ClientRepositoryInterface;
+use App\Domain\Repositories\Interfaces\ServiceRepositoryInterface;
+use App\Domain\Repositories\Interfaces\QueueClientRepositoryInterface;
+use App\Infrastructure\Repositories\ClientRepository;
+use App\Infrastructure\Repositories\ServiceRepository;
+use App\Infrastructure\Repositories\QueueClientRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,10 +24,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-
         $this->app->bind(SalonRepositoryInterface::class, EloquentSalonRepository::class);
         $this->app->bind(FileRepositoryInterface::class, EloquentFileRepository::class);
         $this->app->bind(UserRepositoryInterface::class, EloquentUserRepository::class);
+
+        $this->app->bind(ClientRepositoryInterface::class, ClientRepository::class);
+        $this->app->bind(ServiceRepositoryInterface::class, ServiceRepository::class);
+        $this->app->bind(QueueClientRepositoryInterface::class, QueueClientRepository::class);
     }
 
     /**

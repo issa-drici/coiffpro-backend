@@ -9,6 +9,24 @@ use App\Http\Controllers\Salon\FindSalonByIdController;
 use App\Http\Controllers\Salon\UpdateSalonController;
 use App\Http\Controllers\SubscriptionController;
 
+// Import des nouveaux controllers
+use App\Http\Controllers\Api\Client\CreateClientController;
+use App\Http\Controllers\Api\Client\GetClientController;
+use App\Http\Controllers\Api\Client\UpdateClientController;
+use App\Http\Controllers\Api\Client\DeleteClientController;
+
+use App\Http\Controllers\Api\Service\CreateServiceController;
+use App\Http\Controllers\Api\Service\GetServiceController;
+use App\Http\Controllers\Api\Service\UpdateServiceController;
+use App\Http\Controllers\Api\Service\DeleteServiceController;
+use App\Http\Controllers\Api\Service\GetAllServicesController;
+
+use App\Http\Controllers\Api\Queue\AddClientToQueueController;
+use App\Http\Controllers\Api\Queue\GetWaitingClientsController;
+use App\Http\Controllers\Api\Queue\GetCurrentClientController;
+use App\Http\Controllers\Api\Queue\MoveToNextClientController;
+use App\Http\Controllers\Api\Queue\CancelQueueClientController;
+
 // Routes nécessitant l'authentification via Sanctum
 Route::middleware(['auth:sanctum'])->group(function () {
 
@@ -17,13 +35,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return $request->user()->load('salon');
     });
 
-
-
     Route::get('/salon/{salonId}', FindSalonByIdController::class)
         ->name('salon.find-by-id');
-
-
-
 
     Route::get('/salons', FindAllSalonsController::class)
         ->name('salons.find-all');
@@ -35,4 +48,30 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/subscribe', [SubscriptionController::class, 'subscribe']);
     Route::post('/cancel-subscription', [SubscriptionController::class, 'cancel']);
     Route::get('/subscription/plans', [SubscriptionController::class, 'getPlans']);
+
+    // Routes pour les clients
+    Route::prefix('clients')->group(function () {
+        Route::post('/', CreateClientController::class)->name('clients.create');
+        Route::get('/{clientId}', GetClientController::class)->name('clients.get');
+        Route::put('/{clientId}', UpdateClientController::class)->name('clients.update');
+        Route::delete('/{clientId}', DeleteClientController::class)->name('clients.delete');
+    });
+
+    // Routes pour les services
+    Route::prefix('services')->group(function () {
+        Route::get('/', GetAllServicesController::class)->name('services.index');
+        Route::post('/', CreateServiceController::class)->name('services.create');
+        Route::get('/{serviceId}', GetServiceController::class)->name('services.get');
+        Route::put('/{serviceId}', UpdateServiceController::class)->name('services.update');
+        Route::delete('/{serviceId}', DeleteServiceController::class)->name('services.delete');
+    });
+
+    // Routes pour la file d'attente
+    Route::prefix('queue')->group(function () {
+        Route::post('/add', AddClientToQueueController::class)->name('queue.add');
+        Route::get('/waiting/{salonId}', GetWaitingClientsController::class)->name('queue.waiting');
+        Route::get('/current/{salonId}', GetCurrentClientController::class)->name('queue.current');
+        Route::post('/next/{salonId}', MoveToNextClientController::class)->name('queue.next');
+        Route::delete('/{queueClientId}', CancelQueueClientController::class)->name('queue.cancel');
+    });
 });

@@ -24,18 +24,22 @@ class RegisteredUserController extends Controller
     public function store(Request $request): Response
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', Rules\Password::defaults()],
             'password_confirmation' => ['required', 'same:password'],
-            'user_plan' => ['required', 'string', 'in:basic,premium,elite'],
+            'salon_name' => ['required', 'string', 'max:255'],
+            'user_plan' => ['nullable', 'string', 'in:basic,premium'],
         ]);
 
         $user = User::create([
-            'name' => ucwords($request->name),
+            'firstName' => ucwords($request->first_name),
+            'lastName' => ucwords($request->last_name),
             'email' => $request->email,
             'password' => Hash::make($request->string('password')),
-            'user_plan' => 'premium',
+            'role' => 'salon_owner',
+            'user_plan' => $request->user_plan ?? 'basic',
             'user_subscription_status' => 'trialing',
             'trial_ends_at' => Carbon::now()->addDays(30),
             'email_verified_at' => '2000-01-01 00:00:00',
@@ -48,16 +52,19 @@ class RegisteredUserController extends Controller
         // Création du salon
         $createSalonUsecase = app(CreateSalonUsecase::class);
         $salon = $createSalonUsecase->execute([
-            'name' => ucwords($user->name),
-            'name_slug' => Str::slug($user->name),
+            'name' => ucwords($request->salon_name),
+            'name_slug' => Str::slug($request->salon_name),
             'owner_id' => $user->id
         ]);
+
+        // Mise à jour de l'utilisateur avec l'ID du salon
+        $user->update(['salon_id' => $salon->getId()]);
 
         // Envoyer le mail de bienvenue
         // Mail::to($user->email)->send(new WelcomeTrialStarted($user));
 
         // Envoyer une notification Discord
-        // DiscordNotification::send('inscriptions', "Nouvel utilisateur inscrit : {$user->name} ({$user->email})");
+        // DiscordNotification::send('inscriptions', "Nouvel utilisateur inscrit : {$user->firstName} {$user->lastName} ({$user->email})");
 
         // Enregistrer l'envoi du mail
         // EmailNotificationModel::create([
