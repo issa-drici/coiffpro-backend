@@ -14,16 +14,19 @@ class QueueClientModel extends Model
 
     protected $table = 'queue_clients';
     protected $fillable = [
+        'id',
         'client_id',
+        'salon_id',
         'status',
-        'estimatedTime',
         'amountToPay',
-        'salon_id'
+        'notes',
+        'ticket_number'
     ];
 
     protected $casts = [
-        'estimatedTime' => 'datetime',
         'amountToPay' => 'decimal:2',
+        'ticket_number' => 'integer',
+        'estimatedTime' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];

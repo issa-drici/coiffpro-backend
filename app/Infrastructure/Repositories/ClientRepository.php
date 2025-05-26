@@ -5,6 +5,7 @@ namespace App\Infrastructure\Repositories;
 use App\Domain\Repositories\Interfaces\ClientRepositoryInterface;
 use App\Infrastructure\Models\ClientModel;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ClientRepository implements ClientRepositoryInterface
 {
@@ -15,6 +16,15 @@ class ClientRepository implements ClientRepositoryInterface
     public function findById(string $id): ?ClientModel
     {
         return $this->model->find($id);
+    }
+
+    public function findByPhoneAndFirstName(string $phoneNumber, string $firstName, string $salonId): ?ClientModel
+    {
+        return $this->model
+            ->where('phoneNumber', $phoneNumber)
+            ->whereRaw('LOWER(clients."firstName") = ?', [strtolower($firstName)])
+            ->where('salon_id', $salonId)
+            ->first();
     }
 
     public function findByPhoneNumber(string $phoneNumber, string $salonId): ?ClientModel
@@ -37,7 +47,8 @@ class ClientRepository implements ClientRepositoryInterface
     {
         return $this->model
             ->where('salon_id', $salonId)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('firstName')
+            ->orderBy('lastName')
             ->get();
     }
 

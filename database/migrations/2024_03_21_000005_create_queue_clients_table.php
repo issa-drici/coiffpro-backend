@@ -12,14 +12,13 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('client_id')->constrained('clients');
             $table->enum('status', ['waiting', 'in_progress', 'completed', 'absent'])->default('waiting');
-            $table->dateTime('estimatedTime');
             $table->decimal('amountToPay', 8, 2)->nullable();
             $table->foreignUuid('salon_id')->constrained('salons');
+            $table->text('notes')->nullable();
             $table->timestamps();
 
             // Index pour optimiser les recherches
             $table->index(['salon_id', 'status']);
-            $table->index(['salon_id', 'estimatedTime']);
         });
     }
 

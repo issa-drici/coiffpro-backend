@@ -5,6 +5,7 @@ namespace App\Infrastructure\Repositories;
 use App\Domain\Repositories\Interfaces\QueueClientRepositoryInterface;
 use App\Infrastructure\Models\QueueClientModel;
 use Illuminate\Database\Eloquent\Collection;
+use Carbon\Carbon;
 
 class QueueClientRepository implements QueueClientRepositoryInterface
 {
@@ -90,6 +91,15 @@ class QueueClientRepository implements QueueClientRepositoryInterface
             ->with(['client', 'services'])
             ->where('salon_id', $salonId)
             ->where('status', 'in_progress')
+            ->first();
+    }
+
+    public function findLastTicketOfDay(Carbon $date, string $salonId): ?QueueClientModel
+    {
+        return $this->model
+            ->whereDate('created_at', $date)
+            ->where('salon_id', $salonId)
+            ->orderBy('ticket_number', 'desc')
             ->first();
     }
 }

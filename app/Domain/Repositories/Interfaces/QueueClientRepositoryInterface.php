@@ -4,6 +4,7 @@ namespace App\Domain\Repositories\Interfaces;
 
 use App\Infrastructure\Models\QueueClientModel;
 use Illuminate\Database\Eloquent\Collection;
+use Carbon\Carbon;
 
 interface QueueClientRepositoryInterface
 {
@@ -61,4 +62,9 @@ interface QueueClientRepositoryInterface
      * Récupère le client actuellement en cours de service pour un salon
      */
     public function findCurrentInProgress(string $salonId): ?QueueClientModel;
+
+    /**
+     * Récupère le dernier ticket créé pour une date et un salon donnés
+     */
+    public function findLastTicketOfDay(Carbon $date, string $salonId): ?QueueClientModel;
 }

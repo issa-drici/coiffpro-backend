@@ -26,6 +26,11 @@ use App\Http\Controllers\Api\Queue\GetWaitingClientsController;
 use App\Http\Controllers\Api\Queue\GetCurrentClientController;
 use App\Http\Controllers\Api\Queue\MoveToNextClientController;
 use App\Http\Controllers\Api\Queue\CancelQueueClientController;
+use App\Http\Controllers\Api\Queue\GetQueueClientController;
+
+use App\Http\Controllers\Api\Salon\GetSalonServicesController;
+use App\Http\Controllers\Api\Salon\GetEstimatedTimeController;
+use App\Http\Controllers\Api\Salon\AddNewClientToQueueController;
 
 // Routes nécessitant l'authentification via Sanctum
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -37,6 +42,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/salon/{salonId}', FindSalonByIdController::class)
         ->name('salon.find-by-id');
+
+    Route::get('/salons/{salonId}/services', GetSalonServicesController::class)
+        ->name('salon.services');
+
+    Route::get('/salons/{salonId}/estimated-time', GetEstimatedTimeController::class)
+        ->name('salon.estimated-time');
+
+    Route::post('/salons/{salonId}/queue', AddNewClientToQueueController::class)
+        ->name('salon.queue.add');
 
     Route::get('/salons', FindAllSalonsController::class)
         ->name('salons.find-all');
@@ -68,10 +82,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Routes pour la file d'attente
     Route::prefix('queue')->group(function () {
-        Route::post('/add', AddClientToQueueController::class)->name('queue.add');
         Route::get('/waiting/{salonId}', GetWaitingClientsController::class)->name('queue.waiting');
         Route::get('/current/{salonId}', GetCurrentClientController::class)->name('queue.current');
         Route::post('/next/{salonId}', MoveToNextClientController::class)->name('queue.next');
+        Route::get('/{queueClientId}', GetQueueClientController::class);
         Route::delete('/{queueClientId}', CancelQueueClientController::class)->name('queue.cancel');
     });
 });

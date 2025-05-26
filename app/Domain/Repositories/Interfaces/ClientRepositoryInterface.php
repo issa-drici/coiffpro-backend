@@ -13,6 +13,11 @@ interface ClientRepositoryInterface
     public function findById(string $id): ?ClientModel;
 
     /**
+     * Trouve un client par son numéro de téléphone et son prénom (insensible à la casse)
+     */
+    public function findByPhoneAndFirstName(string $phoneNumber, string $firstName, string $salonId): ?ClientModel;
+
+    /**
      * Trouve un client par son numéro de téléphone et son salon
      */
     public function findByPhoneNumber(string $phoneNumber, string $salonId): ?ClientModel;
@@ -33,7 +38,7 @@ interface ClientRepositoryInterface
     public function create(array $data): ClientModel;
 
     /**
-     * Met à jour un client existant
+     * Met à jour un client
      */
     public function update(string $id, array $data): ClientModel;
 
