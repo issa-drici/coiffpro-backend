@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Api\Queue;
 
-use App\Domain\UseCases\Queue\MoveToNextClientUseCase;
+use App\Domain\UseCases\Queue\GetQueueUseCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
-class MoveToNextClientController extends Controller
+class GetQueueController extends Controller
 {
     public function __construct(
-        private readonly MoveToNextClientUseCase $useCase
+        private readonly GetQueueUseCase $useCase
     ) {}
 
     public function __invoke(string $salonId): JsonResponse
@@ -25,7 +25,7 @@ class MoveToNextClientController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Une erreur est survenue lors du passage au client suivant.'
+                'message' => 'Une erreur est survenue lors de la récupération de la file d\'attente.'
             ], 500);
         }
     }

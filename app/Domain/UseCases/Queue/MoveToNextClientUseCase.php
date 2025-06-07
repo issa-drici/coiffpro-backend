@@ -3,36 +3,154 @@
 namespace App\Domain\UseCases\Queue;
 
 use App\Domain\Repositories\Interfaces\QueueClientRepositoryInterface;
-use App\Infrastructure\Models\QueueClientModel;
+use App\Domain\Repositories\Interfaces\SalonRepositoryInterface;
+use Carbon\Carbon;
 
 class MoveToNextClientUseCase
 {
     public function __construct(
-        private readonly QueueClientRepositoryInterface $queueClientRepository
+        private readonly QueueClientRepositoryInterface $queueClientRepository,
+        private readonly SalonRepositoryInterface $salonRepository
     ) {}
 
-    public function execute(string $salonId): ?QueueClientModel
+    public function execute(string $salonId): array
     {
-        // Vérifier s'il y a un client en cours
+        // Vérifier que le salon existe
+        $salon = $this->salonRepository->findById($salonId);
+        if (!$salon) {
+            throw new \DomainException("Le salon avec l'ID $salonId n'existe pas.");
+        }
+
+        // Récupérer le client actuellement en cours de service
         $currentClient = $this->queueClientRepository->findCurrentInProgress($salonId);
+
+        // Si un client est en cours, le marquer comme terminé
         if ($currentClient) {
-            // Marquer le client actuel comme terminé
-            $this->queueClientRepository->update($currentClient->id, [
-                'status' => 'completed'
-            ]);
+            $this->queueClientRepository->updateStatus($currentClient->id, 'completed');
         }
 
         // Récupérer le prochain client en attente
         $nextClient = $this->queueClientRepository->findNextWaiting($salonId);
+
         if (!$nextClient) {
+            return [
+                'success' => true,
+                'data' => [
+                    'salon' => [
+                        'id' => $salon->id,
+                        'name' => $salon->name
+                    ],
+                    'previous_client' => $currentClient ? [
+                        'id' => $currentClient->id,
+                        'ticket_number' => $currentClient->ticket_number,
+                        'client' => [
+                            'id' => $currentClient->client->id,
+                            'firstName' => $currentClient->client->firstName,
+                            'lastName' => $currentClient->client->lastName
+                        ],
+                        'status' => 'completed',
+                        'completed_at' => Carbon::now()->toDateTimeString()
+                    ] : null,
+                    'current_client' => null,
+                    'next_client' => null,
+                    'message' => 'Aucun client en attente'
+                ]
+            ];
+        }
+
+        // Mettre à jour le statut du prochain client
+        $this->queueClientRepository->updateStatus($nextClient->id, 'in_progress');
+
+        // Calculer le temps d'attente
+        $waitingTime = Carbon::parse($nextClient->created_at)->diffInMinutes(Carbon::now());
+
+        // Calculer le temps total estimé des services
+        $totalEstimatedTime = array_reduce($nextClient->services, function ($carry, $service) {
+            return $carry + $service->duration;
+        }, 0);
+
+        return [
+            'success' => true,
+            'data' => [
+                'salon' => [
+                    'id' => $salon->id,
+                    'name' => $salon->name
+                ],
+                'previous_client' => $currentClient ? [
+                    'id' => $currentClient->id,
+                    'ticket_number' => $currentClient->ticket_number,
+                    'client' => [
+                        'id' => $currentClient->client->id,
+                        'firstName' => $currentClient->client->firstName,
+                        'lastName' => $currentClient->client->lastName
+                    ],
+                    'status' => 'completed',
+                    'completed_at' => Carbon::now()->toDateTimeString()
+                ] : null,
+                'current_client' => [
+                    'id' => $nextClient->id,
+                    'ticket_number' => $nextClient->ticket_number,
+                    'client' => [
+                        'id' => $nextClient->client->id,
+                        'firstName' => $nextClient->client->firstName,
+                        'lastName' => $nextClient->client->lastName,
+                        'phoneNumber' => $nextClient->client->phoneNumber
+                    ],
+                    'services' => array_map(function ($service) {
+                        return [
+                            'id' => $service->id,
+                            'name' => $service->name,
+                            'duration' => $service->duration,
+                            'price' => $service->price
+                        ];
+                    }, $nextClient->services),
+                    'status' => 'in_progress',
+                    'amountToPay' => $nextClient->amountToPay,
+                    'notes' => $nextClient->notes,
+                    'started_at' => Carbon::now()->toDateTimeString(),
+                    'waiting_time' => $waitingTime,
+                    'total_estimated_time' => $totalEstimatedTime
+                ],
+                'next_client' => $this->getNextWaitingClient($salonId)
+            ]
+        ];
+    }
+
+    private function getNextWaitingClient(string $salonId): ?array
+    {
+        $nextWaitingClient = $this->queueClientRepository->findNextWaiting($salonId);
+
+        if (!$nextWaitingClient) {
             return null;
         }
 
-        // Marquer le prochain client comme en cours
-        $this->queueClientRepository->update($nextClient->id, [
-            'status' => 'in_progress'
-        ]);
+        // Calculer le temps d'attente estimé
+        $estimatedWaitingTime = array_reduce($nextWaitingClient->services, function ($carry, $service) {
+            return $carry + $service->duration;
+        }, 0);
 
-        return $this->queueClientRepository->findById($nextClient->id);
+        return [
+            'id' => $nextWaitingClient->id,
+            'ticket_number' => $nextWaitingClient->ticket_number,
+            'client' => [
+                'id' => $nextWaitingClient->client->id,
+                'firstName' => $nextWaitingClient->client->firstName,
+                'lastName' => $nextWaitingClient->client->lastName,
+                'phoneNumber' => $nextWaitingClient->client->phoneNumber
+            ],
+            'services' => array_map(function ($service) {
+                return [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'duration' => $service->duration,
+                    'price' => $service->price
+                ];
+            }, $nextWaitingClient->services),
+            'status' => $nextWaitingClient->status,
+            'amountToPay' => $nextWaitingClient->amountToPay,
+            'notes' => $nextWaitingClient->notes,
+            'created_at' => $nextWaitingClient->created_at,
+            'estimated_waiting_time' => $estimatedWaitingTime
+        ];
     }
 }

@@ -2,18 +2,33 @@
 
 namespace App\Infrastructure\Repositories;
 
-use App\Application\DTOs\SalonWithOwnerDTO;
+use App\Domain\Repositories\Interfaces\SalonRepositoryInterface;
 use App\Domain\Entities\Salon;
-use App\Domain\Repositories\SalonRepositoryInterface;
+use App\Application\DTOs\SalonWithOwnerDTO;
 use App\Infrastructure\Models\SalonModel;
 use App\Domain\Entities\User;
 use App\Domain\Entities\File;
+use Illuminate\Database\Eloquent\Collection;
 
-class EloquentSalonRepository implements SalonRepositoryInterface
+class SalonRepository implements SalonRepositoryInterface
 {
+    public function __construct(
+        private readonly SalonModel $model
+    ) {}
+
+    public function findById(string $id): ?SalonModel
+    {
+        return $this->model->find($id);
+    }
+
+    public function findAll(): Collection
+    {
+        return $this->model->all();
+    }
+
     public function create(Salon $salon): Salon
     {
-        $model = SalonModel::create([
+        $model = $this->model->create([
             'id'          => $salon->getId(),
             'owner_id'    => $salon->getOwnerId(),
             'name'        => $salon->getName(),
@@ -28,30 +43,40 @@ class EloquentSalonRepository implements SalonRepositoryInterface
         return $this->toDomainEntity($model);
     }
 
+    public function update(Salon $salon): Salon
+    {
+        $model = $this->model->findOrFail($salon->getId());
+
+        $model->update([
+            'name' => $salon->getName(),
+            'address' => $salon->getAddress(),
+            'postal_code' => $salon->getPostalCode(),
+            'city' => $salon->getCity(),
+            'city_slug' => $salon->getCitySlug(),
+            'name_slug' => $salon->getNameSlug(),
+            'type_slug' => $salon->getTypeSlug(),
+            'phone' => $salon->getPhone(),
+            'logo_id' => $salon->getLogoId(),
+            'social_links' => $salon->getSocialLinks(),
+            'google_info' => $salon->getGoogleInfo(),
+        ]);
+
+        return $this->toDomainEntity($model);
+    }
+
     public function findByOwnerId(string $ownerId): ?Salon
     {
-        $model = SalonModel::where('owner_id', $ownerId)->first();
+        $model = $this->model->where('owner_id', $ownerId)->first();
         if (!$model) {
             return null;
         }
 
-        return new Salon(
-            id: $model->id,
-            ownerId: $model->owner_id,
-            name: $model->name,
-            address: $model->address,
-            postalCode: $model->postal_code,
-            city: $model->city,
-            citySlug: $model->city_slug,
-            typeSlug: $model->type_slug,
-            nameSlug: $model->name_slug,
-            phone: $model->phone
-        );
+        return $this->toDomainEntity($model);
     }
 
     public function findByIdWithOwner(string $id): ?SalonWithOwnerDTO
     {
-        $salon = SalonModel::with(['owner', 'logo'])
+        $salon = $this->model->with(['owner', 'logo'])
             ->where('salons.id', $id)
             ->join('users', 'salons.owner_id', '=', 'users.id')
             ->select(
@@ -99,7 +124,7 @@ class EloquentSalonRepository implements SalonRepositoryInterface
 
     public function findAllWithOwners(): array
     {
-        $salons = SalonModel::with('logo')
+        $salons = $this->model->with('logo')
             ->join('users', 'salons.owner_id', '=', 'users.id')
             ->select(
                 'salons.*',
@@ -144,7 +169,7 @@ class EloquentSalonRepository implements SalonRepositoryInterface
 
     public function findAllWithOwnersPaginated(array $filters = [], int $page = 1, int $perPage = 10): array
     {
-        $query = SalonModel::query()
+        $query = $this->model->query()
             ->with('logo')
             ->join('users', 'salons.owner_id', '=', 'users.id')
             ->select(
@@ -220,41 +245,9 @@ class EloquentSalonRepository implements SalonRepositoryInterface
         ];
     }
 
-    public function update(Salon $salon): Salon
-    {
-        $model = SalonModel::findOrFail($salon->getId());
-
-        $model->update([
-            'name' => $salon->getName(),
-            'address' => $salon->getAddress(),
-            'postal_code' => $salon->getPostalCode(),
-            'city' => $salon->getCity(),
-            'city_slug' => $salon->getCitySlug(),
-            'name_slug' => $salon->getNameSlug(),
-            'type_slug' => $salon->getTypeSlug(),
-            'phone' => $salon->getPhone(),
-            'logo_id' => $salon->getLogoId(),
-            'social_links' => $salon->getSocialLinks(),
-            'google_info' => $salon->getGoogleInfo(),
-        ]);
-
-        return $this->toDomainEntity($model);
-    }
-
-    public function findById(string $id): ?Salon
-    {
-        $model = SalonModel::find($id);
-
-        if (!$model) {
-            return null;
-        }
-
-        return $this->toDomainEntity($model);
-    }
-
     public function findBySlug(string $typeSlug, string $citySlug, string $nameSlug): ?Salon
     {
-        $model = SalonModel::where('type_slug', $typeSlug)
+        $model = $this->model->where('type_slug', $typeSlug)
             ->where('city_slug', $citySlug)
             ->where('name_slug', $nameSlug)
             ->first();
@@ -264,18 +257,6 @@ class EloquentSalonRepository implements SalonRepositoryInterface
         }
 
         return $this->toDomainEntity($model);
-    }
-
-    public function findAll(): array
-    {
-        $salons = SalonModel::whereNotNull('type_slug')
-            ->whereNotNull('city_slug')
-            ->whereNotNull('name_slug')
-            ->get();
-
-        return $salons->map(function ($model) {
-            return $this->toDomainEntity($model);
-        })->all();
     }
 
     private function toDomainEntity(SalonModel $model): Salon

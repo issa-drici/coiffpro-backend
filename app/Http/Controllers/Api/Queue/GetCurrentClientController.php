@@ -15,21 +15,18 @@ class GetCurrentClientController extends Controller
     public function __invoke(string $salonId): JsonResponse
     {
         try {
-            $client = $this->useCase->execute($salonId);
-
-            if (!$client) {
-                return response()->json([
-                    'message' => 'Aucun client en cours de service'
-                ], 404);
-            }
-
-            return response()->json([
-                'data' => $client
-            ]);
+            $result = $this->useCase->execute($salonId);
+            return response()->json($result);
         } catch (\DomainException $e) {
             return response()->json([
+                'success' => false,
                 'message' => $e->getMessage()
             ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la récupération du client en cours.'
+            ], 500);
         }
     }
 }

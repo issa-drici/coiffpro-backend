@@ -3,6 +3,7 @@
 namespace App\Domain\UseCases\Queue;
 
 use App\Domain\Repositories\Interfaces\QueueClientRepositoryInterface;
+use Carbon\Carbon;
 
 class CancelQueueClientUseCase
 {
@@ -10,24 +11,43 @@ class CancelQueueClientUseCase
         private readonly QueueClientRepositoryInterface $queueClientRepository
     ) {}
 
-    public function execute(string $queueClientId): bool
+    public function execute(string $queueClientId, ?string $cancellationReason = null): array
     {
+        // Récupérer le client en file d'attente
         $queueClient = $this->queueClientRepository->findById($queueClientId);
-
         if (!$queueClient) {
-            throw new \DomainException('Client non trouvé dans la file d\'attente.');
+            throw new \DomainException("Le client en file d'attente avec l'ID $queueClientId n'existe pas.");
         }
 
-        // Vérifier que le client n'est pas déjà terminé ou annulé
-        if (in_array($queueClient->status, ['completed', 'cancelled'])) {
-            throw new \DomainException('Ce client a déjà été traité.');
+        // Vérifier si le client peut être annulé
+        if (!in_array($queueClient->status, ['waiting', 'in_progress'])) {
+            throw new \DomainException(
+                "Impossible d'annuler un client avec le statut '{$queueClient->status}'. " .
+                "Seuls les clients en attente ou en cours peuvent être annulés."
+            );
         }
 
-        // Marquer le client comme annulé
-        $this->queueClientRepository->update($queueClientId, [
-            'status' => 'cancelled'
-        ]);
+        // Préparer les données de mise à jour
+        $updateData = [
+            'status' => 'cancelled',
+            'updated_at' => Carbon::now(),
+            'cancelled_at' => Carbon::now()
+        ];
 
-        return true;
+        // Ajouter la raison d'annulation si fournie
+        if ($cancellationReason !== null) {
+            $updateData['notes'] = $queueClient->notes
+                ? $queueClient->notes . "\nRaison d'annulation : " . $cancellationReason
+                : "Raison d'annulation : " . $cancellationReason;
+        }
+
+        // Mettre à jour le statut
+        $updatedQueueClient = $this->queueClientRepository->update($queueClientId, $updateData);
+
+        return [
+            'success' => true,
+            'message' => 'Client annulé avec succès',
+            'data' => $updatedQueueClient
+        ];
     }
 }

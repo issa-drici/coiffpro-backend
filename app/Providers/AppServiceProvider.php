@@ -5,8 +5,7 @@ namespace App\Providers;
 use App\Domain\Repositories\FileRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Auth\Notifications\ResetPassword;
-use App\Domain\Repositories\SalonRepositoryInterface;
-use App\Infrastructure\Repositories\EloquentSalonRepository;
+use App\Domain\Repositories\Interfaces\SalonRepositoryInterface;
 use App\Infrastructure\Repositories\EloquentFileRepository;
 use App\Domain\Repositories\UserRepositoryInterface;
 use App\Infrastructure\Repositories\EloquentUserRepository;
@@ -16,6 +15,7 @@ use App\Domain\Repositories\Interfaces\QueueClientRepositoryInterface;
 use App\Infrastructure\Repositories\ClientRepository;
 use App\Infrastructure\Repositories\ServiceRepository;
 use App\Infrastructure\Repositories\QueueClientRepository;
+use App\Infrastructure\Repositories\SalonRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(SalonRepositoryInterface::class, EloquentSalonRepository::class);
+        $this->app->bind(SalonRepositoryInterface::class, SalonRepository::class);
         $this->app->bind(FileRepositoryInterface::class, EloquentFileRepository::class);
         $this->app->bind(UserRepositoryInterface::class, EloquentUserRepository::class);
 

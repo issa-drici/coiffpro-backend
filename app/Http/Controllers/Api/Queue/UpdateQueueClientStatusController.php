@@ -2,27 +2,29 @@
 
 namespace App\Http\Controllers\Api\Queue;
 
-use App\Domain\UseCases\Queue\CancelQueueClientUseCase;
+use App\Domain\UseCases\Queue\UpdateQueueClientStatusUseCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class CancelQueueClientController extends Controller
+class UpdateQueueClientStatusController extends Controller
 {
     public function __construct(
-        private readonly CancelQueueClientUseCase $useCase
+        private readonly UpdateQueueClientStatusUseCase $updateQueueClientStatusUseCase
     ) {}
 
     public function __invoke(Request $request, string $queueClientId): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'cancellation_reason' => 'nullable|string|max:500'
+                'status' => 'required|string|in:waiting,in_progress,completed,cancelled',
+                'notes' => 'nullable|string'
             ]);
 
-            $result = $this->useCase->execute(
+            $result = $this->updateQueueClientStatusUseCase->execute(
                 $queueClientId,
-                $validated['cancellation_reason'] ?? null
+                $validated['status'],
+                $validated['notes'] ?? null
             );
 
             return response()->json($result);
@@ -34,7 +36,7 @@ class CancelQueueClientController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Une erreur est survenue lors de l\'annulation du client.'
+                'message' => 'Une erreur est survenue lors de la mise à jour du statut.'
             ], 500);
         }
     }

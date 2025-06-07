@@ -102,4 +102,42 @@ class QueueClientRepository implements QueueClientRepositoryInterface
             ->orderBy('ticket_number', 'desc')
             ->first();
     }
+
+    /**
+     * Récupère tous les clients en file d'attente d'un salon pour une date donnée
+     */
+    public function findAllBySalonAndDate(string $salonId, Carbon $date): Collection
+    {
+        return QueueClientModel::with(['client', 'services'])
+            ->where('salon_id', $salonId)
+            ->whereDate('created_at', $date)
+            ->get();
+    }
+
+    /**
+     * Récupère l'historique des clients en file d'attente d'un salon pour une période donnée
+     */
+    public function findHistoryBySalon(string $salonId, Carbon $startDate, Carbon $endDate, ?string $status = null): Collection
+    {
+        $query = QueueClientModel::with(['client', 'services'])
+            ->where('salon_id', $salonId)
+            ->whereBetween('created_at', [$startDate, $endDate]);
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Met à jour le statut d'un client en file d'attente
+     */
+    public function updateStatus(string $id, string $status): void
+    {
+        QueueClientModel::where('id', $id)->update([
+            'status' => $status,
+            'updated_at' => Carbon::now()
+        ]);
+    }
 }

@@ -67,4 +67,19 @@ interface QueueClientRepositoryInterface
      * Récupère le dernier ticket créé pour une date et un salon donnés
      */
     public function findLastTicketOfDay(Carbon $date, string $salonId): ?QueueClientModel;
+
+    /**
+     * Récupère tous les clients en file d'attente d'un salon pour une date donnée
+     */
+    public function findAllBySalonAndDate(string $salonId, Carbon $date): Collection;
+
+    /**
+     * Récupère l'historique des clients en file d'attente d'un salon pour une période donnée
+     */
+    public function findHistoryBySalon(string $salonId, Carbon $startDate, Carbon $endDate, ?string $status = null): Collection;
+
+    /**
+     * Met à jour le statut d'un client en file d'attente
+     */
+    public function updateStatus(string $id, string $status): void;
 }
