@@ -12,7 +12,7 @@ interface SalonRepositoryInterface
     /**
      * Trouve un salon par son ID
      */
-    public function findById(string $id): ?SalonModel;
+    public function findById(string $id): ?Salon;
 
     /**
      * Récupère tous les salons

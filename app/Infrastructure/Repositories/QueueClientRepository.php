@@ -99,7 +99,7 @@ class QueueClientRepository implements QueueClientRepositoryInterface
         return $this->model
             ->whereDate('created_at', $date)
             ->where('salon_id', $salonId)
-            ->orderBy('ticket_number', 'desc')
+            ->orderBy('ticket_number', 'asc')
             ->first();
     }
 

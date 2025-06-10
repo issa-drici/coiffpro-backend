@@ -25,7 +25,12 @@ class GetCurrentClientController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Une erreur est survenue lors de la récupération du client en cours.'
+                'message' => 'Une erreur est survenue lors de la récupération du client en cours.',
+                'debug' => [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
             ], 500);
         }
     }

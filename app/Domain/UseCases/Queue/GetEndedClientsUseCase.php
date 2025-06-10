@@ -6,7 +6,7 @@ use App\Domain\Repositories\Interfaces\QueueClientRepositoryInterface;
 use App\Domain\Repositories\Interfaces\SalonRepositoryInterface;
 use Carbon\Carbon;
 
-class GetWaitingClientsUseCase
+class GetEndedClientsUseCase
 {
     public function __construct(
         private readonly QueueClientRepositoryInterface $queueClientRepository,
@@ -24,21 +24,14 @@ class GetWaitingClientsUseCase
         // Utiliser la date fournie ou aujourd'hui
         $targetDate = $date ? Carbon::parse($date) : Carbon::now();
 
-        // Récupérer uniquement les clients en attente pour ce salon à cette date
-        $waitingClients = $this->queueClientRepository->findAllByStatus('waiting', $salonId)
+        // Récupérer les clients terminés pour ce salon à cette date
+        $endedClients = $this->queueClientRepository->findAllByStatus('completed', $salonId)
             ->filter(function ($client) use ($targetDate) {
                 return $client->created_at->format('Y-m-d') === $targetDate->format('Y-m-d');
             })
-            ->sortBy('created_at')
+            ->sortBy('updated_at')
             ->values()
             ->toArray();
-
-        // Calculer le temps d'attente estimé pour chaque client
-        $estimatedWaitingTimes = $this->calculateEstimatedWaitingTimes($waitingClients);
-
-        // Calculer l'heure estimée de début de service
-        $currentTime = Carbon::now();
-        $estimatedStartTimes = $this->calculateEstimatedStartTimes($estimatedWaitingTimes, $currentTime);
 
         return [
             'success' => true,
@@ -48,11 +41,11 @@ class GetWaitingClientsUseCase
                     'name' => $salon->getName()
                 ],
                 'date' => $targetDate->format('Y-m-d'),
-                'clients' => array_map(function ($client, $index) use ($estimatedWaitingTimes, $estimatedStartTimes) {
+                'clients' => array_map(function ($client, $index) {
                     return [
                         'id' => $client['id'],
                         'ticket_number' => $client['ticket_number'],
-                        'position' => $index + 1, // Position basée sur l'index (1-based)
+                        'position' => $index + 1,
                         'client' => [
                             'id' => $client['client']['id'],
                             'firstName' => $client['client']['firstName'],
@@ -71,42 +64,11 @@ class GetWaitingClientsUseCase
                         'amountToPay' => $client['amountToPay'],
                         'notes' => $client['notes'],
                         'created_at' => $client['created_at'],
-                        'estimated_waiting_time' => $estimatedWaitingTimes[$client['id']] ?? null,
-                        'estimatedTime' => $estimatedStartTimes[$client['id']] ?? null
+                        'updated_at' => $client['updated_at'],
+                        'completed_at' => $client['updated_at'] // Pour les clients terminés, updated_at = completed_at
                     ];
-                }, $waitingClients, array_keys($waitingClients))
+                }, $endedClients, array_keys($endedClients))
             ]
         ];
-    }
-
-    private function calculateEstimatedWaitingTimes(array $clients): array
-    {
-        $waitingTimes = [];
-        $totalDuration = 0;
-
-        foreach ($clients as $client) {
-            // Calculer la durée totale des services pour ce client
-            $clientDuration = array_reduce($client['services'], function ($carry, $service) {
-                return $carry + $service['duration'];
-            }, 0);
-
-            // Le temps d'attente estimé est la somme des durées des clients qui précèdent
-            $waitingTimes[$client['id']] = $totalDuration;
-            $totalDuration += $clientDuration;
-        }
-
-        return $waitingTimes;
-    }
-
-    private function calculateEstimatedStartTimes(array $estimatedWaitingTimes, Carbon $currentTime): array
-    {
-        $estimatedStartTimes = [];
-
-        foreach ($estimatedWaitingTimes as $clientId => $waitingMinutes) {
-            // Ajouter le temps d'attente estimé à l'heure actuelle
-            $estimatedStartTimes[$clientId] = $currentTime->copy()->addMinutes($waitingMinutes)->toIso8601String();
-        }
-
-        return $estimatedStartTimes;
     }
 }

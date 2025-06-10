@@ -12,7 +12,7 @@ class GetQueueClientUseCase
         private readonly QueueClientRepositoryInterface $queueClientRepository
     ) {}
 
-    public function execute(string $queueClientId): ?QueueClientModel
+    public function execute(string $queueClientId): ?array
     {
         $queueClient = $this->queueClientRepository->findById($queueClientId);
 
@@ -20,32 +20,71 @@ class GetQueueClientUseCase
             return null;
         }
 
-        // Récupérer tous les clients en attente et en cours pour ce salon
-        $currentClient = $this->queueClientRepository->findCurrentInProgress($queueClient->salon_id);
-        $waitingClients = $this->queueClientRepository->findAllByStatus('waiting', $queueClient->salon_id);
+        $salonId = $queueClient->salon_id;
+        $currentTime = Carbon::now();
 
-        // Calculer la durée totale
-        $totalDuration = 0;
+        // Récupérer le client en cours de service
+        $currentClient = $this->queueClientRepository->findCurrentInProgress($salonId);
+        $waitingClients = $this->queueClientRepository->findAllByStatus('waiting', $salonId)
+            ->sortBy('created_at')
+            ->values();
 
-        // Ajouter la durée du client en cours si présent
+        // Construire la file d'attente complète (client en cours + waiting)
+        $queue = collect();
         if ($currentClient) {
-            $totalDuration += $currentClient->services->sum('duration');
+            $queue->push($currentClient);
+        }
+        foreach ($waitingClients as $client) {
+            $queue->push($client);
         }
 
-        // Ajouter la durée des clients en attente jusqu'à notre client
-        foreach ($waitingClients as $client) {
-            if ($client->id === $queueClientId) {
+        // Trouver la position du client cible dans la file
+        $position = null;
+        $totalDuration = 0;
+        $estimatedTime = $currentTime->copy();
+        foreach ($queue as $index => $client) {
+            if ($client->id == $queueClientId) {
+                $position = $index + 1;
                 break;
             }
-            $totalDuration += $client->services->sum('duration');
+            // Si client en cours, prendre la durée restante (si possible)
+            if ($index === 0 && $currentClient && $client->id == $currentClient->id) {
+                // Durée totale des services
+                $totalServiceDuration = $client->services->sum('duration');
+                // Temps déjà passé
+                $elapsed = Carbon::parse($client->updated_at)->diffInMinutes($currentTime);
+                $remaining = max(0, $totalServiceDuration - $elapsed);
+                $totalDuration += $remaining;
+            } else {
+                $totalDuration += $client->services->sum('duration');
+            }
         }
+        $estimatedTime = $currentTime->copy()->addMinutes($totalDuration);
 
-        // Calculer l'heure estimée en ajoutant la durée totale à l'heure actuelle
-        $estimatedTime = Carbon::now()->addMinutes($totalDuration);
-
-        // Ajouter le temps estimé à l'objet queueClient
-        $queueClient->estimatedTime = $estimatedTime->toIso8601String();
-
-        return $queueClient;
+        // Retourner les infos du client + estimation harmonisée
+        return [
+            'id' => $queueClient->id,
+            'ticket_number' => $queueClient->ticket_number,
+            'position' => $position,
+            'client' => [
+                'id' => $queueClient->client->id,
+                'firstName' => $queueClient->client->firstName,
+                'lastName' => $queueClient->client->lastName,
+                'phoneNumber' => $queueClient->client->phoneNumber
+            ],
+            'services' => $queueClient->services->map(function ($service) {
+                return [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'duration' => $service->duration,
+                    'price' => $service->price
+                ];
+            })->toArray(),
+            'status' => $queueClient->status,
+            'amountToPay' => $queueClient->amountToPay,
+            'notes' => $queueClient->notes,
+            'created_at' => $queueClient->created_at,
+            'estimatedTime' => $estimatedTime->toIso8601String()
+        ];
     }
 }

@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 
 use App\Domain\Entities\Salon;
-use App\Domain\Repositories\SalonRepositoryInterface;
+use App\Domain\Repositories\Interfaces\SalonRepositoryInterface;
 use App\Exceptions\UnauthorizedException;
 
 class CreateSalonUsecase

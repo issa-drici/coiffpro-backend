@@ -44,8 +44,8 @@ class GetQueueHistoryUseCase
             'success' => true,
             'data' => [
                 'salon' => [
-                    'id' => $salon->id,
-                    'name' => $salon->name
+                    'id' => $salon->getId(),
+                    'name' => $salon->getName()
                 ],
                 'period' => [
                     'start' => $start->format('Y-m-d'),

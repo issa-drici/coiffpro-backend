@@ -3,7 +3,7 @@
 namespace App\Application\Usecases\Salon;
 
 use Illuminate\Support\Facades\Auth;
-use App\Domain\Repositories\SalonRepositoryInterface;
+use App\Domain\Repositories\Interfaces\SalonRepositoryInterface;
 use App\Exceptions\UnauthorizedException;
 
 class FindAllSalonsUsecase

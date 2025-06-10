@@ -5,7 +5,7 @@ namespace App\Application\Usecases\Salon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Domain\Entities\Salon;
-use App\Domain\Repositories\SalonRepositoryInterface;
+use App\Domain\Repositories\Interfaces\SalonRepositoryInterface;
 use App\Application\Usecases\File\CreateFileUsecase;
 use App\Application\Usecases\File\DeleteFileUsecase;
 use App\Exceptions\UnauthorizedException;

@@ -9,6 +9,7 @@ use App\Infrastructure\Models\SalonModel;
 use App\Domain\Entities\User;
 use App\Domain\Entities\File;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class SalonRepository implements SalonRepositoryInterface
 {
@@ -16,9 +17,13 @@ class SalonRepository implements SalonRepositoryInterface
         private readonly SalonModel $model
     ) {}
 
-    public function findById(string $id): ?SalonModel
+    public function findById(string $id): ?Salon
     {
-        return $this->model->find($id);
+        $model = $this->model->find($id);
+        if (!$model) {
+            return null;
+        }
+        return $this->toDomainEntity($model);
     }
 
     public function findAll(): Collection
@@ -81,7 +86,7 @@ class SalonRepository implements SalonRepositoryInterface
             ->join('users', 'salons.owner_id', '=', 'users.id')
             ->select(
                 'salons.*',
-                'users.name as owner_name',
+                DB::raw('CONCAT(users."firstName", \' \', users."lastName") as owner_name'),
                 'users.email as owner_email',
                 'users.role as owner_role',
                 'users.user_plan as owner_plan',
@@ -128,7 +133,7 @@ class SalonRepository implements SalonRepositoryInterface
             ->join('users', 'salons.owner_id', '=', 'users.id')
             ->select(
                 'salons.*',
-                'users.name as owner_name',
+                DB::raw('CONCAT(users."firstName", \' \', users."lastName") as owner_name'),
                 'users.email as owner_email',
                 'users.role as owner_role',
                 'users.user_plan as owner_plan',
@@ -174,7 +179,7 @@ class SalonRepository implements SalonRepositoryInterface
             ->join('users', 'salons.owner_id', '=', 'users.id')
             ->select(
                 'salons.*',
-                'users.name as owner_name',
+                DB::raw('CONCAT(users."firstName", \' \', users."lastName") as owner_name'),
                 'users.email as owner_email',
                 'users.role as owner_role',
                 'users.user_plan as owner_plan',
@@ -194,7 +199,7 @@ class SalonRepository implements SalonRepositoryInterface
                     $query->where('salons.phone', 'like', "%{$value}%");
                     break;
                 case 'owner_name':
-                    $query->where('users.name', 'like', "%{$value}%");
+                    $query->whereRaw('LOWER(CONCAT(users."firstName", \' \', users."lastName")) LIKE ?', ['%' . strtolower($value) . '%']);
                     break;
                 case 'owner_email':
                     $query->where('users.email', 'like', "%{$value}%");

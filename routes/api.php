@@ -26,6 +26,8 @@ use App\Http\Controllers\Api\Queue\GetWaitingClientsController;
 use App\Http\Controllers\Api\Queue\GetCurrentClientController;
 use App\Http\Controllers\Api\Queue\MoveToNextClientController;
 use App\Http\Controllers\Api\Queue\CancelQueueClientController;
+use App\Http\Controllers\Api\Queue\GetAbsentClientsController;
+use App\Http\Controllers\Api\Queue\GetEndedClientsController;
 use App\Http\Controllers\Api\Queue\GetQueueClientController;
 use App\Http\Controllers\QueueClientController;
 use App\Http\Controllers\Api\Queue\UpdateQueueClientStatusController;
@@ -44,17 +46,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return $request->user()->load('salon');
     });
 
-    Route::get('/salon/{salonId}', FindSalonByIdController::class)
-        ->name('salon.find-by-id');
-
-    Route::get('/salons/{salonId}/services', GetSalonServicesController::class)
-        ->name('salon.services');
-
     Route::get('/salons/{salonId}/estimated-time', GetEstimatedTimeController::class)
         ->name('salon.estimated-time');
-
-    Route::post('/salons/{salonId}/queue', AddNewClientToQueueController::class)
-        ->name('salon.queue.add');
 
     Route::get('/salons', FindAllSalonsController::class)
         ->name('salons.find-all');
@@ -86,9 +79,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Routes pour la file d'attente
     Route::prefix('queue')->group(function () {
-        Route::get('/{salonId}', GetQueueController::class)->name('queue.list');
         Route::get('/waiting/{salonId}', GetWaitingClientsController::class)->name('queue.waiting');
         Route::get('/current/{salonId}', GetCurrentClientController::class)->name('queue.current');
+        Route::get('/absent/{salonId}', GetAbsentClientsController::class)->name('queue.absent');
+        Route::get('/ended/{salonId}', GetEndedClientsController::class)->name('queue.ended');
         Route::post('/next/{salonId}', MoveToNextClientController::class)->name('queue.next');
         Route::post('/clients', AddClientToQueueController::class);
         Route::get('/history/{salonId}', GetQueueHistoryController::class)->name('queue.history');
@@ -101,3 +95,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::patch('/clients/{queueClientId}/status', UpdateQueueClientStatusController::class);
     });
 });
+
+Route::get('/queue-client/{queueClientId}', GetQueueClientController::class)->name('queue.client.get');
+
+// Route::get('/queue/{salonId}', GetQueueController::class)->name('queue.list');
+
+Route::post('/salons/{salonId}/queue', AddNewClientToQueueController::class)
+    ->name('salon.queue.add');
+
+Route::get('/salons/{salonId}/services', GetSalonServicesController::class)
+    ->name('salon.services');
+
+Route::get('/salon/{salonId}', FindSalonByIdController::class)
+    ->name('salon.find-by-id');

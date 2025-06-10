@@ -29,8 +29,8 @@ class GetCurrentClientUseCase
                 'success' => true,
                 'data' => [
                     'salon' => [
-                        'id' => $salon->id,
-                        'name' => $salon->name
+                        'id' => $salon->getId(),
+                        'name' => $salon->getName()
                     ],
                     'current_client' => null,
                     'next_client' => $this->getNextClient($salonId)
@@ -43,9 +43,7 @@ class GetCurrentClientUseCase
         $elapsedTime = $startTime->diffInMinutes(Carbon::now());
 
         // Calculer le temps total estimé des services
-        $totalEstimatedTime = array_reduce($currentClient->services, function ($carry, $service) {
-            return $carry + $service->duration;
-        }, 0);
+        $totalEstimatedTime = $currentClient->services->sum('duration');
 
         // Calculer le temps restant estimé
         $remainingTime = max(0, $totalEstimatedTime - $elapsedTime);
@@ -54,8 +52,8 @@ class GetCurrentClientUseCase
             'success' => true,
             'data' => [
                 'salon' => [
-                    'id' => $salon->id,
-                    'name' => $salon->name
+                    'id' => $salon->getId(),
+                    'name' => $salon->getName()
                 ],
                 'current_client' => [
                     'id' => $currentClient->id,
@@ -66,14 +64,14 @@ class GetCurrentClientUseCase
                         'lastName' => $currentClient->client->lastName,
                         'phoneNumber' => $currentClient->client->phoneNumber
                     ],
-                    'services' => array_map(function ($service) {
+                    'services' => $currentClient->services->map(function ($service) {
                         return [
                             'id' => $service->id,
                             'name' => $service->name,
                             'duration' => $service->duration,
                             'price' => $service->price
                         ];
-                    }, $currentClient->services),
+                    })->toArray(),
                     'status' => $currentClient->status,
                     'amountToPay' => $currentClient->amountToPay,
                     'notes' => $currentClient->notes,
@@ -95,10 +93,13 @@ class GetCurrentClientUseCase
             return null;
         }
 
-        // Calculer le temps d'attente estimé
-        $estimatedWaitingTime = array_reduce($nextClient->services, function ($carry, $service) {
-            return $carry + $service->duration;
-        }, 0);
+        // Vérifier que les relations sont chargées
+        if (!$nextClient->client || !$nextClient->services) {
+            return null;
+        }
+
+        // Calculer le temps d'attente estimé en utilisant sum() sur la Collection
+        $estimatedWaitingTime = $nextClient->services->sum('duration');
 
         return [
             'id' => $nextClient->id,
@@ -109,14 +110,14 @@ class GetCurrentClientUseCase
                 'lastName' => $nextClient->client->lastName,
                 'phoneNumber' => $nextClient->client->phoneNumber
             ],
-            'services' => array_map(function ($service) {
+            'services' => $nextClient->services->map(function ($service) {
                 return [
                     'id' => $service->id,
                     'name' => $service->name,
                     'duration' => $service->duration,
                     'price' => $service->price
                 ];
-            }, $nextClient->services),
+            })->toArray(),
             'status' => $nextClient->status,
             'amountToPay' => $nextClient->amountToPay,
             'notes' => $nextClient->notes,

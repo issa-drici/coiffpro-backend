@@ -37,8 +37,8 @@ class MoveToNextClientUseCase
                 'success' => true,
                 'data' => [
                     'salon' => [
-                        'id' => $salon->id,
-                        'name' => $salon->name
+                        'id' => $salon->getId(),
+                        'name' => $salon->getName()
                     ],
                     'previous_client' => $currentClient ? [
                         'id' => $currentClient->id,
@@ -65,16 +65,14 @@ class MoveToNextClientUseCase
         $waitingTime = Carbon::parse($nextClient->created_at)->diffInMinutes(Carbon::now());
 
         // Calculer le temps total estimé des services
-        $totalEstimatedTime = array_reduce($nextClient->services, function ($carry, $service) {
-            return $carry + $service->duration;
-        }, 0);
+        $totalEstimatedTime = $nextClient->services->sum('duration');
 
         return [
             'success' => true,
             'data' => [
                 'salon' => [
-                    'id' => $salon->id,
-                    'name' => $salon->name
+                    'id' => $salon->getId(),
+                    'name' => $salon->getName()
                 ],
                 'previous_client' => $currentClient ? [
                     'id' => $currentClient->id,
@@ -125,9 +123,7 @@ class MoveToNextClientUseCase
         }
 
         // Calculer le temps d'attente estimé
-        $estimatedWaitingTime = array_reduce($nextWaitingClient->services, function ($carry, $service) {
-            return $carry + $service->duration;
-        }, 0);
+        $estimatedWaitingTime = $nextWaitingClient->services->sum('duration');
 
         return [
             'id' => $nextWaitingClient->id,
