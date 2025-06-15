@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Queue;
 use App\Domain\UseCases\Queue\GetCurrentClientUseCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class GetCurrentClientController extends Controller
 {
@@ -15,7 +16,15 @@ class GetCurrentClientController extends Controller
     public function __invoke(string $salonId): JsonResponse
     {
         try {
-            $result = $this->useCase->execute($salonId);
+            $user = Auth::user();
+            $barber = $user->barber;
+            if (!$barber) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aucun barber associé à cet utilisateur.'
+                ], 403);
+            }
+            $result = $this->useCase->execute($salonId, $barber->id);
             return response()->json($result);
         } catch (\DomainException $e) {
             return response()->json([

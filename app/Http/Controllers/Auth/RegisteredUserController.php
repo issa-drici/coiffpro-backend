@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Application\Usecases\Salon\CreateSalonUsecase;
 use App\Http\Controllers\Controller;
+use App\Models\Barber;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -59,6 +60,15 @@ class RegisteredUserController extends Controller
 
         // Mise à jour de l'utilisateur avec l'ID du salon
         $user->update(['salon_id' => $salon->getId()]);
+
+        // Création automatique du barber pour l'utilisateur
+        Barber::create([
+            'user_id' => $user->id,
+            'salon_id' => $salon->getId(),
+            'bio' => 'Propriétaire du salon',
+            'is_active' => false,
+            'is_active_changed_at' => now(),
+        ]);
 
         // Envoyer le mail de bienvenue
         // Mail::to($user->email)->send(new WelcomeTrialStarted($user));

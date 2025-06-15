@@ -12,10 +12,12 @@ use App\Infrastructure\Repositories\EloquentUserRepository;
 use App\Domain\Repositories\Interfaces\ClientRepositoryInterface;
 use App\Domain\Repositories\Interfaces\ServiceRepositoryInterface;
 use App\Domain\Repositories\Interfaces\QueueClientRepositoryInterface;
+use App\Domain\Repositories\Interfaces\BarberRepositoryInterface;
 use App\Infrastructure\Repositories\ClientRepository;
 use App\Infrastructure\Repositories\ServiceRepository;
 use App\Infrastructure\Repositories\QueueClientRepository;
 use App\Infrastructure\Repositories\SalonRepository;
+use App\Infrastructure\Repositories\BarberRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ClientRepositoryInterface::class, ClientRepository::class);
         $this->app->bind(ServiceRepositoryInterface::class, ServiceRepository::class);
         $this->app->bind(QueueClientRepositoryInterface::class, QueueClientRepository::class);
+        $this->app->bind(BarberRepositoryInterface::class, BarberRepository::class);
     }
 
     /**

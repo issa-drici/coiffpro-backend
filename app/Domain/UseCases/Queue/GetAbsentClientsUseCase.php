@@ -13,7 +13,7 @@ class GetAbsentClientsUseCase
         private readonly SalonRepositoryInterface $salonRepository
     ) {}
 
-    public function execute(string $salonId, ?string $date = null): array
+    public function execute(string $salonId, string $barberId, ?string $date = null): array
     {
         // Vérifier que le salon existe
         $salon = $this->salonRepository->findById($salonId);
@@ -24,8 +24,8 @@ class GetAbsentClientsUseCase
         // Utiliser la date fournie ou aujourd'hui
         $targetDate = $date ? Carbon::parse($date) : Carbon::now();
 
-        // Récupérer les clients absents pour ce salon à cette date
-        $absentClients = $this->queueClientRepository->findAllByStatus('absent', $salonId)
+        // Récupérer les clients absents pour ce barber à cette date
+        $absentClients = $this->queueClientRepository->findAllByStatusAndBarber('absent', $salonId, $barberId)
             ->filter(function ($client) use ($targetDate) {
                 return $client->created_at->format('Y-m-d') === $targetDate->format('Y-m-d');
             })

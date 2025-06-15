@@ -13,7 +13,7 @@ class GetCurrentClientUseCase
         private readonly SalonRepositoryInterface $salonRepository
     ) {}
 
-    public function execute(string $salonId): array
+    public function execute(string $salonId, string $barberId): array
     {
         // Vérifier que le salon existe
         $salon = $this->salonRepository->findById($salonId);
@@ -21,8 +21,8 @@ class GetCurrentClientUseCase
             throw new \DomainException("Le salon avec l'ID $salonId n'existe pas.");
         }
 
-        // Récupérer le client actuellement en cours de service
-        $currentClient = $this->queueClientRepository->findCurrentInProgress($salonId);
+        // Récupérer le client actuellement en cours de service pour ce barber
+        $currentClient = $this->queueClientRepository->findCurrentInProgress($salonId, $barberId);
 
         if (!$currentClient) {
             return [

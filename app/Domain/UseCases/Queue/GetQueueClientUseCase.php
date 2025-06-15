@@ -42,23 +42,27 @@ class GetQueueClientUseCase
         $position = null;
         $totalDuration = 0;
         $estimatedTime = $currentTime->copy();
+
         foreach ($queue as $index => $client) {
             if ($client->id == $queueClientId) {
                 $position = $index + 1;
                 break;
             }
-            // Si client en cours, prendre la durée restante (si possible)
+
+            // Calculer le temps pour ce client
             if ($index === 0 && $currentClient && $client->id == $currentClient->id) {
-                // Durée totale des services
+                // Client en cours - calculer le temps restant
                 $totalServiceDuration = $client->services->sum('duration');
-                // Temps déjà passé
-                $elapsed = Carbon::parse($client->updated_at)->diffInMinutes($currentTime);
-                $remaining = max(0, $totalServiceDuration - $elapsed);
-                $totalDuration += $remaining;
+                $startTime = Carbon::parse($client->updated_at); // Quand le service a commencé
+                $elapsedTime = $currentTime->diffInMinutes($startTime);
+                $remainingTime = max(0, $totalServiceDuration - $elapsedTime);
+                $totalDuration += $remainingTime;
             } else {
+                // Client en attente - ajouter sa durée totale
                 $totalDuration += $client->services->sum('duration');
             }
         }
+
         $estimatedTime = $currentTime->copy()->addMinutes($totalDuration);
 
         // Retourner les infos du client + estimation harmonisée
@@ -84,7 +88,8 @@ class GetQueueClientUseCase
             'amountToPay' => $queueClient->amountToPay,
             'notes' => $queueClient->notes,
             'created_at' => $queueClient->created_at,
-            'estimatedTime' => $estimatedTime->toIso8601String()
+            'estimatedTime' => $estimatedTime->toIso8601String(),
+            'estimated_waiting_time' => $totalDuration
         ];
     }
 }

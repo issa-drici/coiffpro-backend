@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Infrastructure\Models\EmailNotificationModel;
 use App\Infrastructure\Models\SalonModel;
+use App\Models\Barber;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -82,5 +83,13 @@ class User extends Authenticatable
     public function emailNotifications()
     {
         return $this->hasMany(EmailNotificationModel::class);
+    }
+
+    /**
+     * Relation avec le barber
+     */
+    public function barber()
+    {
+        return $this->hasOne(Barber::class);
     }
 }

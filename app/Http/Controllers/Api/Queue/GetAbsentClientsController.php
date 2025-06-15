@@ -6,6 +6,7 @@ use App\Domain\UseCases\Queue\GetAbsentClientsUseCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class GetAbsentClientsController extends Controller
 {
@@ -16,12 +17,22 @@ class GetAbsentClientsController extends Controller
     public function __invoke(Request $request, string $salonId): JsonResponse
     {
         try {
+            $user = Auth::user();
+            $barber = $user->barber;
+            if (!$barber) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aucun barber associé à cet utilisateur.'
+                ], 403);
+            }
+
             $validated = $request->validate([
                 'date' => 'nullable|date|date_format:Y-m-d'
             ]);
 
             $result = $this->useCase->execute(
                 $salonId,
+                $barber->id,
                 $validated['date'] ?? null
             );
 

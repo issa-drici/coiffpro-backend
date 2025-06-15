@@ -24,7 +24,7 @@ use App\Http\Controllers\Api\Service\GetAllServicesController;
 use App\Http\Controllers\Api\Queue\AddClientToQueueController;
 use App\Http\Controllers\Api\Queue\GetWaitingClientsController;
 use App\Http\Controllers\Api\Queue\GetCurrentClientController;
-use App\Http\Controllers\Api\Queue\MoveToNextClientController;
+use App\Http\Controllers\Api\Queue\MoveToNextQueueClientController;
 use App\Http\Controllers\Api\Queue\CancelQueueClientController;
 use App\Http\Controllers\Api\Queue\GetAbsentClientsController;
 use App\Http\Controllers\Api\Queue\GetEndedClientsController;
@@ -38,12 +38,15 @@ use App\Http\Controllers\Api\Salon\GetSalonServicesController;
 use App\Http\Controllers\Api\Salon\GetEstimatedTimeController;
 use App\Http\Controllers\Api\Salon\AddNewClientToQueueController;
 
+use App\Http\Controllers\Api\Barber\ToggleBarberActiveStatusController;
+use App\Http\Controllers\Api\GenerateQrCodePdfController;
+
 // Routes nécessitant l'authentification via Sanctum
 Route::middleware(['auth:sanctum'])->group(function () {
 
     // Route déjà existante : /api/user
     Route::get('/user', function (Request $request) {
-        return $request->user()->load('salon');
+        return $request->user()->load(['salon', 'barber']);
     });
 
     Route::get('/salons/{salonId}/estimated-time', GetEstimatedTimeController::class)
@@ -77,13 +80,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/{serviceId}', DeleteServiceController::class)->name('services.delete');
     });
 
+    // Routes pour les barbers
+    Route::prefix('barbers')->group(function () {
+        Route::patch('/{barberId}/toggle-status', ToggleBarberActiveStatusController::class)
+            ->name('barbers.toggle-status');
+    });
+
+    // Routes pour générer un PDF avec QR code
+    Route::post('/generate-qrcode-pdf', GenerateQrCodePdfController::class)
+        ->name('generate.qrcode-pdf');
+
     // Routes pour la file d'attente
     Route::prefix('queue')->group(function () {
         Route::get('/waiting/{salonId}', GetWaitingClientsController::class)->name('queue.waiting');
         Route::get('/current/{salonId}', GetCurrentClientController::class)->name('queue.current');
         Route::get('/absent/{salonId}', GetAbsentClientsController::class)->name('queue.absent');
         Route::get('/ended/{salonId}', GetEndedClientsController::class)->name('queue.ended');
-        Route::post('/next/{salonId}', MoveToNextClientController::class)->name('queue.next');
+        Route::post('/next/{salonId}', MoveToNextQueueClientController::class)->name('queue.next');
         Route::post('/clients', AddClientToQueueController::class);
         Route::get('/history/{salonId}', GetQueueHistoryController::class)->name('queue.history');
     });

@@ -24,6 +24,11 @@ interface QueueClientRepositoryInterface
     public function findAllByStatus(string $status, string $salonId): Collection;
 
     /**
+     * Récupère tous les clients en file d'attente d'un barber avec un statut spécifique
+     */
+    public function findAllByStatusAndBarber(string $status, string $salonId, string $barberId): Collection;
+
+    /**
      * Récupère tous les clients en file d'attente d'un client
      */
     public function findAllByClient(string $clientId): Collection;
@@ -59,9 +64,9 @@ interface QueueClientRepositoryInterface
     public function findNextWaiting(string $salonId): ?QueueClientModel;
 
     /**
-     * Récupère le client actuellement en cours de service pour un salon
+     * Récupère le client actuellement en cours de service pour un salon et un barber
      */
-    public function findCurrentInProgress(string $salonId): ?QueueClientModel;
+    public function findCurrentInProgress(string $salonId, string $barberId): ?QueueClientModel;
 
     /**
      * Récupère le dernier ticket créé pour une date et un salon donnés

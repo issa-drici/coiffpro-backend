@@ -37,6 +37,17 @@ class QueueClientRepository implements QueueClientRepositoryInterface
             ->get();
     }
 
+    public function findAllByStatusAndBarber(string $status, string $salonId, string $barberId): Collection
+    {
+        return $this->model
+            ->with(['client', 'services'])
+            ->where('status', $status)
+            ->where('salon_id', $salonId)
+            ->where('barber_id', $barberId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
     public function findAllByClient(string $clientId): Collection
     {
         return $this->model
@@ -85,11 +96,12 @@ class QueueClientRepository implements QueueClientRepositoryInterface
             ->first();
     }
 
-    public function findCurrentInProgress(string $salonId): ?QueueClientModel
+    public function findCurrentInProgress(string $salonId, string $barberId): ?QueueClientModel
     {
         return $this->model
             ->with(['client', 'services'])
             ->where('salon_id', $salonId)
+            ->where('barber_id', $barberId)
             ->where('status', 'in_progress')
             ->first();
     }

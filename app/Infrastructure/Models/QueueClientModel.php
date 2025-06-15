@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Models;
 
 use App\Infrastructure\Models\SalonModel;
+use App\Models\Barber;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +18,7 @@ class QueueClientModel extends Model
         'id',
         'client_id',
         'salon_id',
+        'barber_id',
         'status',
         'amountToPay',
         'notes',
@@ -39,6 +41,11 @@ class QueueClientModel extends Model
     public function salon(): BelongsTo
     {
         return $this->belongsTo(SalonModel::class, 'salon_id');
+    }
+
+    public function barber(): BelongsTo
+    {
+        return $this->belongsTo(Barber::class, 'barber_id');
     }
 
     public function services(): BelongsToMany

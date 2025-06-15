@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Api\Queue;
 
-use App\Domain\UseCases\Queue\MoveToNextClientUseCase;
+use App\Domain\UseCases\Queue\MoveToNextQueueClientUseCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
-class MoveToNextClientController extends Controller
+class MoveToNextQueueClientController extends Controller
 {
     public function __construct(
-        private readonly MoveToNextClientUseCase $useCase
+        private readonly MoveToNextQueueClientUseCase $useCase
     ) {}
 
     public function __invoke(string $salonId): JsonResponse

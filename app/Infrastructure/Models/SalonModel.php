@@ -4,6 +4,7 @@ namespace App\Infrastructure\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use App\Models\Barber;
 
 class SalonModel extends Model
 {
@@ -41,5 +42,13 @@ class SalonModel extends Model
     public function logo()
     {
         return $this->belongsTo(FileModel::class, 'logo_id');
+    }
+
+    /**
+     * Relation avec les barbers
+     */
+    public function barbers()
+    {
+        return $this->hasMany(Barber::class);
     }
 }

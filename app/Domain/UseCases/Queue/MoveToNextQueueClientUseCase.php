@@ -6,7 +6,7 @@ use App\Domain\Repositories\Interfaces\QueueClientRepositoryInterface;
 use App\Domain\Repositories\Interfaces\SalonRepositoryInterface;
 use Carbon\Carbon;
 
-class MoveToNextClientUseCase
+class MoveToNextQueueClientUseCase
 {
     public function __construct(
         private readonly QueueClientRepositoryInterface $queueClientRepository,
@@ -94,14 +94,14 @@ class MoveToNextClientUseCase
                         'lastName' => $nextClient->client->lastName,
                         'phoneNumber' => $nextClient->client->phoneNumber
                     ],
-                    'services' => array_map(function ($service) {
+                    'services' => $nextClient->services->map(function ($service) {
                         return [
                             'id' => $service->id,
                             'name' => $service->name,
                             'duration' => $service->duration,
                             'price' => $service->price
                         ];
-                    }, $nextClient->services),
+                    })->toArray(),
                     'status' => 'in_progress',
                     'amountToPay' => $nextClient->amountToPay,
                     'notes' => $nextClient->notes,
@@ -134,14 +134,14 @@ class MoveToNextClientUseCase
                 'lastName' => $nextWaitingClient->client->lastName,
                 'phoneNumber' => $nextWaitingClient->client->phoneNumber
             ],
-            'services' => array_map(function ($service) {
+            'services' => $nextWaitingClient->services->map(function ($service) {
                 return [
                     'id' => $service->id,
                     'name' => $service->name,
                     'duration' => $service->duration,
                     'price' => $service->price
                 ];
-            }, $nextWaitingClient->services),
+            })->toArray(),
             'status' => $nextWaitingClient->status,
             'amountToPay' => $nextWaitingClient->amountToPay,
             'notes' => $nextWaitingClient->notes,
